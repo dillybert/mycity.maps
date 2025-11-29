@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+set -o errtrace
+shopt -s nullglob
+shopt -s globstar
+shopt -s dotglob
+shopt -s extglob
+
+if [ -f "$PWD/.env" ]; then
+  set -o allexport
+  source "$PWD/.env"
+  set +o allexport
+fi
+
+# Temp dir
+TMP_DIR="${TMP_DIR:-$PWD/tmp}"
+mkdir -p "$TMP_DIR"
+
+# Dir of the script
+BASEDIR=$(dirname "${BASH_SOURCE[0]}")
+
+# Log file
+LOG_FILE="$TMP_DIR/project_$(date +%Y%m%d_%H).log"
+
+# Include scripts
+for f in "$BASEDIR"/scripts/cmd/*.sh "$BASEDIR"/scripts/modules/*.sh; do
+    [ -f "$f" ] && source "$f"
+done
+
+# Enable error handling 
+trap 'handle_error $LINENO ${BASH_SOURCE[0]}' ERR
+
+cli "$@"
